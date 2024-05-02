@@ -4,7 +4,7 @@ using HiGHS
 model = Model(HiGHS.Optimizer)
 
 @variable(model, x >= 0)
-@variable(model, 3 >= y >= 0)
+@variable(model, 0 <= y <= 3)
 
 @objective(model, Min, 12x + 20y)
 
