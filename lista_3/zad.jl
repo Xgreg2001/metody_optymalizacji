@@ -15,7 +15,7 @@ function general_assignment(J::Vector{Int}, M::Vector{Int}, M_prim::Vector{Int},
 
     @variable(model, 0 <= x[J, M])
 
-    @objective(model, Min, sum(x[j, m] * C[j, m] for j in J, m in M))
+    @objective(model, Max, sum(x[j, m] * C[j, m] for j in J, m in M))
 
     @constraint(model, [j in J], sum(x[j, m] for m in M) == 1)
     @constraint(model, [m in M_prim], sum(P[j, m] * x[j, m] for j in J) <= T[m])
@@ -101,6 +101,8 @@ for i in 1:instances
     end
     T = [parse(Int, x) for x in split(strip(readline(f)), " ")]
 
-    println(iterative_general_assignment(J, M, P, C, T))
+    sol = iterative_general_assignment(J, M, P, C, T)
+    println(sol)
+    println("cost: ", calcualte_cost(sol, C))
 end
 
