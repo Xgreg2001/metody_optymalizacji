@@ -10,6 +10,15 @@ function calcualte_cost(x::Vector{Tuple{Int,Int}}, C::Matrix{Int})
     return cost
 end
 
+function calcaulate_resources(x::Vector{Tuple{Int,Int}}, P::Matrix{Int})
+    resources = zeros(Int, axes(P)[2])
+    for e in x
+        (j, m) = e
+        resources[m] += P[j, m]
+    end
+    return resources
+end
+
 function general_assignment(J::Vector{Int}, M::Vector{Int}, M_prim::Vector{Int}, P::Matrix{Int}, C::Matrix{Int}, T::Vector{Int}, y::Matrix{Bool})
     model = Model(GLPK.Optimizer)
 
@@ -73,36 +82,44 @@ function iterative_general_assignment(J::Int, M::Int, P::Matrix{Int}, C::Matrix{
     return F
 end
 
+filenames = ["gap1.txt", "gap2.txt", "gap3.txt", "gap4.txt", "gap5.txt",
+    "gap6.txt", "gap7.txt", "gap8.txt", "gap9.txt", "gap10.txt", "gap11.txt", "gap12.txt"]
 
-filename = "gap1.txt"
+for filename in filenames
+    f = open(filename, "r")
 
-f = open(filename, "r")
+    println("Parsing file: ", filename)
 
-println("Parsing file: ", filename)
+    instances = parse(Int64, readline(f))
 
-instances = parse(Int64, readline(f))
+    println("Number of instances: ", instances)
 
-println("Number of instances: ", instances)
+    for i in 1:instances
+        println("Instance: ", i)
+        line = strip(readline(f))
+        M, J = [parse(Int, x) for x in split(line, " ")]
+        P = Matrix{Int}(undef, J, M)
+        C = Matrix{Int}(undef, J, M)
+        T = Vector{Int}(undef, M)
+        for i in 1:M
+            line = split(strip(readline(f)), " ")
+            C[:, i] = [parse(Int, x) for x in line]
+        end
+        for i in 1:M
+            line = split(strip(readline(f)), " ")
+            P[:, i] = [parse(Int, x) for x in line]
+        end
+        T = [parse(Int, x) for x in split(strip(readline(f)), " ")]
+        orig_T = copy(T)
 
-for i in 1:instances
-    println("Instance: ", i)
-    line = strip(readline(f))
-    M, J = [parse(Int, x) for x in split(line, " ")]
-    P = Matrix{Int}(undef, J, M)
-    C = Matrix{Int}(undef, J, M)
-    T = Vector{Int}(undef, M)
-    for i in 1:M
-        line = split(strip(readline(f)), " ")
-        C[:, i] = [parse(Int, x) for x in line]
+        sol = iterative_general_assignment(J, M, P, C, T)
+        # println(sol)
+        println("cost: ", calcualte_cost(sol, C))
+        println("used resources: ", calcaulate_resources(sol, P))
+        println("available resources: ", orig_T)
+
+
     end
-    for i in 1:M
-        line = split(strip(readline(f)), " ")
-        P[:, i] = [parse(Int, x) for x in line]
-    end
-    T = [parse(Int, x) for x in split(strip(readline(f)), " ")]
 
-    sol = iterative_general_assignment(J, M, P, C, T)
-    println(sol)
-    println("cost: ", calcualte_cost(sol, C))
+    println("------------------------------------")
 end
-
