@@ -19,16 +19,12 @@ function calcaulate_resources(x::Vector{Tuple{Int,Int}}, P::Matrix{Int})
     return resources
 end
 
-function general_assignment(J::Vector{Int}, M::Vector{Int}, M_prim::Vector{Int}, P::Matrix{Int}, C::Matrix{Int}, T::Vector{Int}, y::Matrix{Bool}, min=false)
+function general_assignment(J::Vector{Int}, M::Vector{Int}, M_prim::Vector{Int}, P::Matrix{Int}, C::Matrix{Int}, T::Vector{Int}, y::Matrix{Bool})
     model = Model(GLPK.Optimizer)
 
     @variable(model, 0 <= x[J, M])
 
-    if min
-        @objective(model, Min, sum(x[j, m] * C[j, m] for j in J, m in M))
-    else
-        @objective(model, Max, sum(x[j, m] * C[j, m] for j in J, m in M))
-    end
+    @objective(model, Min, sum(x[j, m] * C[j, m] for j in J, m in M))
 
     @constraint(model, [j in J], sum(x[j, m] for m in M) == 1)
     @constraint(model, [m in M_prim], sum(P[j, m] * x[j, m] for j in J) <= T[m])
@@ -37,10 +33,14 @@ function general_assignment(J::Vector{Int}, M::Vector{Int}, M_prim::Vector{Int},
     set_silent(model)
     optimize!(model)
 
+    if termination_status(model) != MOI.OPTIMAL
+        throw("No solution found")
+    end
+
     return value.(x)
 end
 
-function iterative_general_assignment(J::Int, M::Int, P::Matrix{Int}, C::Matrix{Int}, T::Vector{Int}, min=false)::Vector{Tuple{Int,Int}}
+function iterative_general_assignment(J::Int, M::Int, P::Matrix{Int}, C::Matrix{Int}, T::Vector{Int})::Vector{Tuple{Int,Int}}
     F = []
     M_prim = [m for m in 1:M]
     y = zeros(Bool, J, M)
@@ -48,7 +48,7 @@ function iterative_general_assignment(J::Int, M::Int, P::Matrix{Int}, C::Matrix{
     M = [m for m in 1:M]
 
     while length(J) > 0
-        x = general_assignment(J, M, M_prim, P, C, T, y, min)
+        x = general_assignment(J, M, M_prim, P, C, T, y)
 
         for j in axes(x)[1]
             for m in axes(x)[2]
@@ -116,18 +116,23 @@ for filename in filenames
             P[:, i] = [parse(Int, x) for x in line]
         end
         T = [parse(Int, x) for x in split(strip(readline(f)), " ")]
-        orig_T = copy(T)
+        available_resources = copy(T)
 
         if filename in minimizing
-            sol = iterative_general_assignment(J, M, P, C, T, true)
+            sol = iterative_general_assignment(J, M, P, C, T)
         else
+            C = -C
             sol = iterative_general_assignment(J, M, P, C, T)
         end
         # println(sol)
         println("cost:                ", calcualte_cost(sol, C))
-        println("used resources:      ", calcaulate_resources(sol, P))
-        println("available resources: ", orig_T)
 
+        used_resources = calcaulate_resources(sol, P)
+        println("used resources:      ", used_resources)
+        println("available resources: ", available_resources)
+
+        ratio = used_resources ./ available_resources
+        println("resource ratio:      ", round.(ratio, digits=2))
 
     end
 
