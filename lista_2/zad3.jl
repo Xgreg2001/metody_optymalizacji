@@ -2,15 +2,22 @@ using JuMP, GLPK
 using Plots
 
 n = 5  # Liczba zadań
+println("Liczba zadań: ", n)
+
 m = 4  # Liczba procesorów
+println("Liczba procesorów: ", m)
+
 # Czasy wykonania dla każdego zadania na każdym procesorze
 times = [
-    [3, 2, 4, 3],  # Czasy dla zadania 1 na procesorach P1, P2, ..., Pm
-    [2, 3, 3, 2],  # Czasy dla zadania 2
-    [4, 1, 2, 1],  # Czasy dla zadania 3
-    [1, 5, 3, 4],  # Czasy dla zadania 4
-    [5, 2, 1, 2]   # Czasy dla zadania 5
+    3 2 4 3;  # Czasy dla zadania 1 na procesorach P1, P2, ..., Pm
+    2 3 3 2;  # Czasy dla zadania 2
+    4 1 2 1;  # Czasy dla zadania 3
+    1 5 3 4;  # Czasy dla zadania 4
+    5 2 1 2   # Czasy dla zadania 5
 ]
+
+println("t = ")
+display(times)
 
 model = Model(GLPK.Optimizer)
 
@@ -41,7 +48,7 @@ for j in 1:n
         if j > 1
             @constraint(model, t_start[j, p] >= t_end[j-1, p]) # rozpocznij pracę dopiero po zakończeniu pracy na poprzednim zadaniu
         end
-        @constraint(model, t_end[j, p] == t_start[j, p] + sum(times[k][p] * x[k, j] for k in 1:n)) # obliczenie końca pracy
+        @constraint(model, t_end[j, p] == t_start[j, p] + sum(times[k, p] * x[k, j] for k in 1:n)) # obliczenie końca pracy
     end
 end
 

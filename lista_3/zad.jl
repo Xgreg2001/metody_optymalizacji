@@ -104,6 +104,9 @@ for filename in filenames
         println("Instance: ", i)
         line = strip(readline(f))
         M, J = [parse(Int, x) for x in split(line, " ")]
+
+        println("J: ", J, " M: ", M)
+
         P = Matrix{Int}(undef, J, M)
         C = Matrix{Int}(undef, J, M)
         T = Vector{Int}(undef, M)

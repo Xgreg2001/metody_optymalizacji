@@ -43,7 +43,7 @@ model = Model(GLPK.Optimizer)
 # minimalizacja czasu
 @objective(model, Min, sum(t[i, j] * x[i, j] for i in 1:m, j in 1:n))
 
-print(model)
+# print(model)
 
 optimize!(model)
 
